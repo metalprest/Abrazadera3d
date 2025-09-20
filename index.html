@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visor 3D – Selector vertical</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    :root{
+      /* verde para hover/activo */
+      --green:#22e26d;   /* puedes cambiarlo si quieres otro tono */
+      --btn-bg:#111;
+      --btn-bd:#2a2a2a;
+    }
+
+    /* Tipografía: Century Gothic con fallbacks */
+    html, body {
+      margin:0; height:100%;
+      background:#000;
+      font-family: "Century Gothic", CenturyGothic, "URW Gothic L",
+                   "Segoe UI", Arial, Helvetica, sans-serif;
+    }
+
+    model-viewer{
+      position:fixed; inset:0;
+      width:100%; height:100vh;
+      background:#000;
+      /* deja espacio visual a la barra si lo prefieres:
+      margin-left: 200px;  */
+    }
+
+    /* Barra lateral vertical */
+    aside{
+      position:fixed; top:0; left:0; bottom:0; z-index:10;
+      width: 210px;               /* ajusta el ancho si quieres */
+      padding:12px;
+      display:flex; flex-direction:column; gap:8px;
+      background:#000a;           /* ligera transparencia */
+      backdrop-filter: blur(6px);
+      box-sizing:border-box;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--btn-bd);
+      background:var(--btn-bg);
+      color:#fff;
+      padding:.55rem .75rem;
+      border-radius:.6rem;
+      cursor:pointer; font-weight:600;
+      text-align:left;
+      transition: background .15s, color .15s, box-shadow .15s, border-color .15s;
+    }
+    /* Hover: verde con letras negras */
+    .btn:hover, .btn:focus-visible{
+      background:var(--green);
+      color:#000;
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--green) 55%, #000 45%) inset;
+      outline: none;
+    }
+    /* Activo/seleccionado: verde con letras negras */
+    .btn.active{
+      background:var(--green);
+      color:#000;
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--green) 55%, #000 45%) inset;
+    }
+
+    /* Botones utilitarios abajo */
+    .spacer{ flex:1 1 auto; }
+    .tools{
+      display:flex; flex-direction:column; gap:8px;
+      margin-top:auto;
+    }
+  </style>
+</head>
+<body>
+
+  <aside>
+    <!-- Botones verticales -->
+    <button class="btn" data-file="parte_derecha.glb">Parte derecha</button>
+    <button class="btn" data-file="parte_izquerda.glb">Parte izquierda</button>
+    <button class="btn" data-file="pieza_completa.glb">Pieza completa</button>
+
+    <div class="spacer"></div>
+
+    <!-- Controles -->
+    <div class="tools">
+      <button id="toggle-rotate" class="btn">⟳ Auto-rotate</button>
+      <button id="reset" class="btn">↺ Reset</button>
+    </div>
+  </aside>
+
+  <model-viewer id="mv"
+    src=""
+    alt="Modelo 3D"
+    camera-controls
+    auto-rotate
+    interaction-prompt="auto"
+    shadow-intensity="0.8"
+    exposure="1"
+    loading="eager"
+    reveal="auto"
+    style="--poster-color: transparent;">
+  </model-viewer>
+
+  <script>
+    const mv = document.getElementById('mv');
+    const buttons = Array.from(document.querySelectorAll('button[data-file]'));
+    const btnRotate = document.getElementById('toggle-rotate');
+    const btnReset = document.getElementById('reset');
+
+    function setActive(btn){
+      buttons.forEach(b => b.classList.toggle('active', b === btn));
+    }
+    function bust(url){
+      const sep = url.includes('?') ? '&' : '?';
+      return `${url}${sep}v=${Date.now()}`;
+    }
+    function loadModel(file){
+      const src = bust(file);     // evita caché del GLB
+      mv.src = '';
+      requestAnimationFrame(() => { mv.src = src; });
+      localStorage.setItem('lastModel', file);
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setActive(btn);
+        loadModel(btn.dataset.file);
+      });
+    });
+
+    btnRotate.addEventListener('click', () => {
+      if (mv.hasAttribute('auto-rotate')) {
+        mv.removeAttribute('auto-rotate');
+        btnRotate.textContent = '⟳ Auto-rotate (off)';
+      } else {
+        mv.setAttribute('auto-rotate', '');
+        btnRotate.textContent = '⟳ Auto-rotate';
+      }
+    });
+
+    btnReset.addEventListener('click', () => {
+      const current = localStorage.getItem('lastModel') || buttons[0].dataset.file;
+      loadModel(current);
+    });
+
+    // Carga inicial (último usado o el primero)
+    const initial = localStorage.getItem('lastModel') || buttons[0].dataset.file;
+    const initialBtn = buttons.find(b => b.dataset.file === initial) || buttons[0];
+    setActive(initialBtn);
+    loadModel(initial);
+  </script>
+
+</body>
+</html>
