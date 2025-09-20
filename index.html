@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Visor 3D – Menú colapsable</title>
+  <title>Visor 3D – Menú colapsable con branding</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
@@ -12,7 +12,6 @@
       --btn-bd:#2a2a2a;
       --panelW: 240px;
     }
-    /* Tipografía + base */
     html, body{
       margin:0; height:100%;
       background:#000;
@@ -22,11 +21,9 @@
     model-viewer{
       position:fixed; inset:0;
       width:100%; height:100vh; background:#000;
-      /* en desktop, dejamos espacio para el panel cuando esté abierto */
       transition: margin-left .25s ease;
     }
-
-    /* Botón flotante (hamburger) */
+    /* Botón menú */
     .fab{
       position:fixed; top:12px; left:12px; z-index:20;
       width:42px; height:42px; border-radius:10px;
@@ -38,8 +35,7 @@
     }
     .fab:hover{ background:#1a1a1a }
     .fab.hide{ transform: translateX(calc(var(--panelW) - 30px)); }
-
-    /* Panel lateral (overlay en mobile) */
+    /* Panel */
     aside#panel{
       position:fixed; top:0; left:0; bottom:0; z-index:25;
       width:var(--panelW);
@@ -52,24 +48,19 @@
       box-sizing:border-box;
     }
     aside#panel.open{ transform: translateX(0); }
-
-    /* Scrim para cerrar tocando fuera (solo móvil) */
+    /* Capa oscura móvil */
     .scrim{
       position:fixed; inset:0; z-index:24;
       background:#0008; opacity:0; pointer-events:none;
       transition:opacity .2s ease;
     }
     .scrim.show{ opacity:1; pointer-events:auto; }
-
-    /* Cabecera del panel (opcional) */
+    /* Texto panel */
     .title{ color:#fff; font-weight:700; margin:0 0 6px 2px; opacity:.9; }
-
     /* Botones */
     .btn{
-      appearance:none;
       border:1px solid var(--btn-bd);
-      background:var(--btn-bg);
-      color:#fff;
+      background:var(--btn-bg); color:#fff;
       padding:.6rem .75rem;
       border-radius:.6rem;
       cursor:pointer; font-weight:600; text-align:left;
@@ -87,22 +78,26 @@
     }
     .spacer{ flex:1 1 auto; }
     .tools{ display:flex; flex-direction:column; gap:8px; margin-top:auto; }
-
-    /* Desktop: panel abierto por defecto y empuja el viewer */
+    /* Desktop */
     @media (min-width: 900px){
       aside#panel{ transform: translateX(0); }
       model-viewer.with-panel{ margin-left: var(--panelW); }
       .scrim{ display:none; }
-      .fab.hide{ transform:none; } /* no escondemos en desktop */
+      .fab.hide{ transform:none; }
+    }
+    /* Logo branding */
+    .branding{
+      position:fixed; bottom:12px; right:12px; z-index:50;
+      width:100px; opacity:.7;
     }
   </style>
 </head>
 <body>
 
-  <!-- Botón hamburguesa -->
+  <!-- Botón menú -->
   <button id="toggle" class="fab" aria-label="Abrir menú" aria-expanded="false">☰</button>
 
-  <!-- Panel y scrim -->
+  <!-- Panel -->
   <aside id="panel" aria-label="Selector de modelos">
     <h3 class="title">Modelos</h3>
     <button class="btn" data-file="parte_derecha.glb">Parte derecha</button>
@@ -131,6 +126,9 @@
     style="--poster-color: transparent;">
   </model-viewer>
 
+  <!-- 🔹 Branding -->
+  <img src="Logo_Metalprest.png" alt="Logo_Metalprest" class="branding">
+
   <script>
     const mv = document.getElementById('mv');
     const buttons = Array.from(document.querySelectorAll('button[data-file]'));
@@ -141,7 +139,6 @@
     const scrim = document.getElementById('scrim');
     const mql = window.matchMedia('(min-width: 900px)');
 
-    // cache-busting para forzar recarga del GLB
     const bust = (url) => `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
 
     function setActive(btn){
@@ -152,16 +149,12 @@
       mv.src = '';
       requestAnimationFrame(() => { mv.src = src; });
       localStorage.setItem('lastModel', file);
-
-      // En móvil, al elegir modelo cerramos el panel para dejar pantalla libre
       if (!mql.matches) closePanel();
     }
 
-    // Toggle panel
     function openPanel(){
       panel.classList.add('open');
       toggle.setAttribute('aria-expanded', 'true');
-      // en mobile mostramos scrim y movemos el FAB hacia la derecha
       if (!mql.matches){
         scrim.classList.add('show');
         toggle.classList.add('hide');
@@ -182,7 +175,6 @@
     toggle.addEventListener('click', togglePanel);
     scrim.addEventListener('click', closePanel);
 
-    // Botones de modelo
     buttons.forEach(btn => {
       btn.addEventListener('click', () => {
         setActive(btn);
@@ -190,7 +182,6 @@
       });
     });
 
-    // Auto-rotate ON/OFF
     btnRotate.addEventListener('click', () => {
       if (mv.hasAttribute('auto-rotate')) {
         mv.removeAttribute('auto-rotate');
@@ -201,21 +192,17 @@
       }
     });
 
-    // Reset vista
     btnReset.addEventListener('click', () => {
       const current = localStorage.getItem('lastModel') || buttons[0].dataset.file;
       loadModel(current);
     });
 
-    // Estado inicial
     function applyDesktopLayout(){
-      // En desktop mostramos panel y empujamos el viewer
       panel.classList.add('open');
       mv.classList.add('with-panel');
       scrim.classList.remove('show');
     }
     function applyMobileLayout(){
-      // En móvil arrancamos con panel cerrado y viewer a pantalla completa
       panel.classList.remove('open');
       mv.classList.remove('with-panel');
       scrim.classList.remove('show');
@@ -224,9 +211,8 @@
       e.matches ? applyDesktopLayout() : applyMobileLayout();
     }
     mql.addEventListener?.('change', updateLayout);
-    updateLayout(mql); // aplicar al cargar
+    updateLayout(mql);
 
-    // Carga modelo inicial
     const initial = localStorage.getItem('lastModel') || buttons[0].dataset.file;
     const initialBtn = buttons.find(b => b.dataset.file === initial) || buttons[0];
     setActive(initialBtn);
